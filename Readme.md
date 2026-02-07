@@ -31,13 +31,48 @@ You can also add outlines programmatically with:
 
     var outline = gameObject.AddComponent<Outline>();
 
-    outline.OutlineMode = Outline.Mode.OutlineAll;
+    outline.OutlineMode = OutlineMode.OutlineAll;
     outline.OutlineColor = Color.yellow;
     outline.OutlineWidth = 5f;
 
 The outline script does a small amount of work in Awake(). For best results, use outline.enabled to toggle the outline. Avoid removing and re-adding the component if possible.
 
 For large meshes, you may also like to enable 'Precompute Outline' in the editor. This will reduce the amount of work performed in Awake().
+
+Changing outline in runtime via external scripts
+------------------------------------------------
+
+You can also change the outline while run-time by fetching the 'Outline' component and run the function:
+
+`ApplySettings(OutlineEffect outlineEffect, bool priority = false)`
+
+Definition for `OutlineEffect` parameter:
+```
+[Serializeable]
+public struct OutlineEffect
+{
+    public OutlineMode outlineMode;
+    public Color outlineColor;
+    public float outlineThickness;
+}
+```
+
+`priority` parameter (default `false`) is used to determine whether we change the render queue to `3099` (which is lower than the default `3100` and will be rendered first) so layering will be correct.
+
+Example usage:
+
+```
+    OutlineEffect outlineEffect = new();
+
+    // set up the outline effect
+    outlineEffect.outlineMode = OutlineMode.OutlineAll;
+    outlineEffect.outlineColor = Color.white;
+    outlineEffect.outlineThickness = 3;
+
+    // get the outline component
+    Outline outline = GetComponent<Outline>();
+    outline.ApplySettings(outlineEffect, priority = true); // rendered first
+```
 
 
 Troubleshooting
