@@ -1,8 +1,9 @@
-﻿//
+//
 //  Outline.cs
 //  QuickOutline
 //
 //  Created by Chris Nolet on 3/30/18.
+//  Edited by nglammm on 2/7/26
 //  Copyright © 2018 Chris Nolet. All rights reserved.
 //
 
@@ -11,20 +12,28 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+public enum OutlineMode {
+  OutlineAll,
+  OutlineVisible,
+  OutlineHidden,
+  OutlineAndSilhouette,
+  SilhouetteOnly
+}
+
+[Serializable]
+public struct OutlineEffect
+{
+    public OutlineMode outlineMode;
+    public Color outlineColor;
+    public float outlineThickness;
+}
+
 [DisallowMultipleComponent]
 
 public class Outline : MonoBehaviour {
   private static HashSet<Mesh> registeredMeshes = new HashSet<Mesh>();
 
-  public enum Mode {
-    OutlineAll,
-    OutlineVisible,
-    OutlineHidden,
-    OutlineAndSilhouette,
-    SilhouetteOnly
-  }
-
-  public Mode OutlineMode {
+  public OutlineMode OutlineMode {
     get { return outlineMode; }
     set {
       outlineMode = value;
@@ -54,7 +63,7 @@ public class Outline : MonoBehaviour {
   }
 
   [SerializeField]
-  private Mode outlineMode;
+  private OutlineMode outlineMode;
 
   [SerializeField]
   private Color outlineColor = Color.white;
@@ -79,6 +88,7 @@ public class Outline : MonoBehaviour {
   private Material outlineFillMaterial;
 
   private bool needsUpdate;
+  private bool isPriority = false;
 
   void Awake() {
 
@@ -155,6 +165,23 @@ public class Outline : MonoBehaviour {
     // Destroy material instances
     Destroy(outlineMaskMaterial);
     Destroy(outlineFillMaterial);
+  }
+
+  /// <summary>
+  /// Applies the struct of 'OutlineEffect' to this.
+  /// </summary>
+  /// <param name="outlineEffect">Desired 'OutlineEffect'.</param>
+  /// <param name="priority">Does this layer takes the priority?</param>
+  public void ApplySettings(OutlineEffect outlineEffect, bool priority = false)
+  {
+    if (enabled == false) enabled = true;
+    isPriority = priority;
+    
+    outlineMode = outlineEffect.outlineMode;
+    outlineColor = outlineEffect.outlineColor;
+    outlineWidth = outlineEffect.outlineThickness;
+
+    needsUpdate = true;
   }
 
   void Bake() {
@@ -275,35 +302,40 @@ public class Outline : MonoBehaviour {
     outlineFillMaterial.SetColor("_OutlineColor", outlineColor);
 
     switch (outlineMode) {
-      case Mode.OutlineAll:
+      case OutlineMode.OutlineAll:
         outlineMaskMaterial.SetFloat("_ZTest", (float)UnityEngine.Rendering.CompareFunction.Always);
         outlineFillMaterial.SetFloat("_ZTest", (float)UnityEngine.Rendering.CompareFunction.Always);
         outlineFillMaterial.SetFloat("_OutlineWidth", outlineWidth);
         break;
 
-      case Mode.OutlineVisible:
+      case OutlineMode.OutlineVisible:
         outlineMaskMaterial.SetFloat("_ZTest", (float)UnityEngine.Rendering.CompareFunction.Always);
         outlineFillMaterial.SetFloat("_ZTest", (float)UnityEngine.Rendering.CompareFunction.LessEqual);
         outlineFillMaterial.SetFloat("_OutlineWidth", outlineWidth);
         break;
 
-      case Mode.OutlineHidden:
+      case OutlineMode.OutlineHidden:
         outlineMaskMaterial.SetFloat("_ZTest", (float)UnityEngine.Rendering.CompareFunction.Always);
         outlineFillMaterial.SetFloat("_ZTest", (float)UnityEngine.Rendering.CompareFunction.Greater);
         outlineFillMaterial.SetFloat("_OutlineWidth", outlineWidth);
         break;
 
-      case Mode.OutlineAndSilhouette:
+      case OutlineMode.OutlineAndSilhouette:
         outlineMaskMaterial.SetFloat("_ZTest", (float)UnityEngine.Rendering.CompareFunction.LessEqual);
         outlineFillMaterial.SetFloat("_ZTest", (float)UnityEngine.Rendering.CompareFunction.Always);
         outlineFillMaterial.SetFloat("_OutlineWidth", outlineWidth);
         break;
 
-      case Mode.SilhouetteOnly:
+      case OutlineMode.SilhouetteOnly:
         outlineMaskMaterial.SetFloat("_ZTest", (float)UnityEngine.Rendering.CompareFunction.LessEqual);
         outlineFillMaterial.SetFloat("_ZTest", (float)UnityEngine.Rendering.CompareFunction.Greater);
         outlineFillMaterial.SetFloat("_OutlineWidth", 0f);
         break;
     }
+
+    int queue = isPriority ? 3099 : 3100;
+    
+    outlineFillMaterial.renderQueue = queue;
+    outlineMaskMaterial.renderQueue = queue;
   }
 }
