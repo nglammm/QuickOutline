@@ -57,7 +57,7 @@ public struct OutlineEffect
 }
 ```
 
-`priority` parameter (default `false`) is used to determine whether we change the render queue to `3099` (which is lower than the default `3100` and will be rendered first) so layering will be correct.
+`priority` parameter (default `false`) is used to determine whether we change the render queue to `3099` (which is lower than the default `3100` and will be rendered before) so layering will be correct.
 
 Example usage:
 
@@ -71,7 +71,7 @@ Example usage:
 
     // get the outline component
     Outline outline = GetComponent<Outline>();
-    outline.ApplySettings(outlineEffect, priority = true); // rendered first
+    outline.ApplySettings(outlineEffect, priority = true); // rendered last
 ```
 
 
